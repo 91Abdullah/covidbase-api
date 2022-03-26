@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/getStats', [SentimentController::class, 'getStats']);
 Route::get('/getSearch', [SentimentController::class, 'getSearch']);
-
+Route::get('/getAutoComplete', [SentimentController::class, 'getAutoCompleteData']);
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
