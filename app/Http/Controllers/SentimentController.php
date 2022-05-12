@@ -36,7 +36,7 @@ class SentimentController extends Controller
         try {
             $drugs = Sentiment::query()->pluck('drug')->unique()->count();
             $disease = Sentiment::query()->pluck('disease')->unique()->count();
-            $drugDiseasePairs = Sentiment::query()->pluck('drug', 'disease')->unique()->count();
+            $drugDiseasePairs = Sentiment::query()->count();
             return response(['drug' => $drugs, 'disease' => $disease, 'pairs' => $drugDiseasePairs]);
         } catch (\Throwable $throwable) {
             return response($throwable->getMessage(), 500);
