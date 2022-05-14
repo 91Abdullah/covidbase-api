@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gene;
+use App\Models\Pdb;
 use App\Models\Sentiment;
 use Illuminate\Http\Request;
 
@@ -11,7 +12,7 @@ class SentimentController extends Controller
     public function getAutoCompleteData(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'type' => ['required', 'in:drug,disease,gene'],
+            'type' => ['required', 'in:drug,disease,gene,pdb'],
             'q' => ['required', 'string']
         ]);
 
@@ -28,7 +29,10 @@ class SentimentController extends Controller
                 })->toArray(),
                 'gene' => Gene::query()->distinct()->select(['gene'])->where('gene', 'LIKE', "%$request->q%")->pluck('gene')->map(function ($v) {
                     return ['label' => $v, 'value' => $v];
-                })
+                })->toArray(),
+                'pdb' => Pdb::query()->distinct()->select(['pdb'])->where('pdb', 'LIKE', "%$request->q%")->pluck('pdb')->map(function ($v) {
+                    return ['label' => $v, 'value' => $v];
+                })->toArray()
             };
             return response()->json($data);
         } catch (\Exception $exception) {
@@ -41,9 +45,11 @@ class SentimentController extends Controller
             $drugs = Sentiment::query()->pluck('drug')->unique()->count();
             $disease = Sentiment::query()->pluck('disease')->unique()->count();
             $genes = Gene::query()->pluck('gene')->unique()->count();
+            $pdbs = Pdb::query()->pluck('pdb')->unique()->count();
             $drugDiseasePairs = Sentiment::query()->count();
             $diseaseGenePairs = Gene::query()->count();
-            return response(['drug' => $drugs, 'disease' => $disease, 'pairs' => $drugDiseasePairs, 'genes' => $genes, 'diseaseGenePair' => $diseaseGenePairs]);
+            $drugPdbPairs = Pdb::query()->count();
+            return response(['drug' => $drugs, 'disease' => $disease, 'pairs' => $drugDiseasePairs, 'genes' => $genes, 'diseaseGenePair' => $diseaseGenePairs, 'pdbs' => $pdbs, 'drugPdbPair' => $drugPdbPairs]);
         } catch (\Throwable $throwable) {
             return response($throwable->getMessage(), 500);
         }
@@ -52,7 +58,7 @@ class SentimentController extends Controller
     public function getSearch(Request $request): \Illuminate\Http\Response|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory
     {
         $request->validate([
-            'type' => ['required', 'in:drug,disease,gene'],
+            'type' => ['required', 'in:drug,disease,gene,pdb'],
             'term' => ['required']
         ]);
         try {
@@ -101,6 +107,19 @@ class SentimentController extends Controller
                         ],
                         3 => [
                             'name' => 'Verified', 'count' => $query->where('association', 'Verified')->count()
+                        ]
+                    ];
+                    break;
+                case 'pdb':
+                    $query = Pdb::query()->where('pdb', 'LIKE', "%$term%")->get();
+                    $searchCount = [
+                        ['name' => 'PDB', 'count' => $query->unique('pdb')->count()],
+                        ['name' => 'Drug', 'count' => $query->unique('drug')->count()],
+                        ['name' => 'Drug PDB pair', 'count' => $query->count()],
+                    ];
+                    $stats = [
+                        0 => [
+                            'name' => 'Drugs', 'count' => $query->unique('drug')->count()
                         ]
                     ];
                     break;
