@@ -66,6 +66,27 @@ class SentimentController extends Controller
             $term = $request->term;
             switch ($type) {
                 case 'drug':
+                    $query = Sentiment::query()->where($type, 'LIKE', "%$term%")->orderBy('confidence', 'desc')->get();
+                    $query2 = Pdb::query()->where($type, 'LIKE', "%$term%")->get();
+                    $searchCount = [
+                        ['name' => 'Disease', 'count' => $query->unique('disease')->count()],
+                        ['name' => 'PDB', 'count' => $query2->unique('pdb')->count()],
+                    ];
+                    $stats = [
+                        0 => [
+                            'name' => 'Neutral',
+                            'count' => $query->where('class', 'Neutral')->count()
+                        ],
+                        1 => [
+                            'name' => 'Negative',
+                            'count' => $query->where('class', 'Negative')->count(),
+                        ],
+                        2 => [
+                            'name' => 'Positive',
+                            'count' => $query->where('class', 'Positive')->count(),
+                        ]
+                    ];
+                    break;
                 case 'disease':
                     $query = Sentiment::query()->where($type, 'LIKE', "%$term%")->orderBy('confidence', 'desc')->get();
                     $searchCount = [

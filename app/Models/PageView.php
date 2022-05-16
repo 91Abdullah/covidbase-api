@@ -5,12 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Sentiment extends Model
+class PageView extends Model
 {
     use HasFactory;
-
-    public function getDiseaseAttribute($value): string
-    {
-        return ucfirst($value);
-    }
+    protected $fillable = ['userId', 'key', 'location', 'page'];
 }
