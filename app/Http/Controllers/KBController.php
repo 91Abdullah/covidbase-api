@@ -79,12 +79,16 @@ class KBController extends Controller
         })->toArray();
     }
 
-    public function logTopSearch($type, $term): \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder
+    public function logTopSearch($type, $term): \Illuminate\Http\JsonResponse
     {
-        return TopSearch::query()->create([
-            'searchType' => $type,
-            'searchTerm' => $term
-        ]);
+        if(config('app.log_top_search')) {
+            TopSearch::query()->create([
+                'searchType' => $type,
+                'searchTerm' => $term
+            ]);
+            return response()->json("Search query logged.");
+        }
+        return response()->json("Search query logging disabled.");
     }
 
     public function getDiseaseMiRNASearch(Request $request): \Illuminate\Http\JsonResponse
