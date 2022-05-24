@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/test', [TestController::class, 'test']);
+Route::get('/getOptions', [\App\Http\Controllers\PageViewController::class, 'getOptions']);
 Route::get('/', function () {
     return view('welcome');
 });
