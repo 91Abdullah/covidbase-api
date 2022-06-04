@@ -13,4 +13,9 @@ class Sentiment extends Model
     {
         return ucfirst($value);
     }
+
+    public function diseaseOntology(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(DiseaseOntology::class, 'name', 'disease');
+    }
 }
