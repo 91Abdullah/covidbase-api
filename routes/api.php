@@ -24,9 +24,11 @@ Route::get('/drug-disease', [PageViewController::class, 'getAllDrugDiseasePairs'
 Route::get('/drug-pdb', [PageViewController::class, 'getAllDrugPDBPairs']);
 Route::get('/disease-gene', [PageViewController::class, 'getAllDiseaseGenePairs']);
 Route::get('/disease-miRNA', [PageViewController::class, 'getAllDiseaseMiRNAPairs']);
+Route::get('/disease-lncRNA', [PageViewController::class, 'getAllDiseaseLncRNAPairs']);
 Route::get('/genes', [PageViewController::class, 'getAllGeneNames']);
 Route::get('/pdbs', [PageViewController::class, 'getAllPDBNames']);
 Route::get('/miRNAs', [PageViewController::class, 'getAllMirnaNames']);
+Route::get('/lncRNAs', [PageViewController::class, 'getAllLncrnaNames']);
 
 // Get options
 
@@ -36,22 +38,26 @@ Route::post('/drugSearch', [KBController::class, 'getDrugSearch']);
 Route::post('/diseaseSearch', [KBController::class, 'getDiseaseSearch']);
 Route::post('/geneSearch', [KBController::class, 'getGeneSearch']);
 Route::post('/miRNASearch', [KBController::class, 'getMiRNASearch']);
+Route::post('/lncRNASearch', [KBController::class, 'getLncRNASearch']);
 Route::post('/pdbSearch', [KBController::class, 'getPDBSearch']);
 Route::post('/drugDiseaseSearch', [KBController::class, 'getDrugDiseaseSearch']);
 Route::post('/drugPDBSearch', [KBController::class, 'getDrugPDBSearch']);
 Route::post('/diseaseGeneSearch', [KBController::class, 'getDiseaseGeneSearch']);
 Route::post('/diseaseMiRNASearch', [KBController::class, 'getDiseaseMiRNASearch']);
+Route::post('/diseaseLncRNASearch', [KBController::class, 'getDiseaseLncRNASearch']);
 
 Route::get('/getTopDrugSearch', [KBController::class, 'getTopDrugSearch']);
 Route::get('/getTopDiseaseSearch', [KBController::class, 'getTopDiseaseSearch']);
 Route::get('/getTopGeneSearch', [KBController::class, 'getTopGeneSearch']);
 Route::get('/getTopPDBSearch', [KBController::class, 'getTopPDBSearch']);
 Route::get('/getTopMiRNASearch', [KBController::class, 'getTopMiRNASearch']);
+Route::get('/getTopLncRNASearch', [KBController::class, 'getTopLncRNASearch']);
 
 Route::get('/getTopDrugDiseaseSearch', [KBController::class, 'getTopDrugDiseaseSearch']);
 Route::get('/getTopDrugPDBSearch', [KBController::class, 'getTopDrugPDBSearch']);
 Route::get('/getTopDiseaseGeneSearch', [KBController::class, 'getTopDiseaseGeneSearch']);
 Route::get('/getTopDiseaseMiRNASearch', [KBController::class, 'getTopDiseaseMiRNASearch']);
+Route::get('/getTopDiseaseLncRNASearch', [KBController::class, 'getTopDiseaseLncRNASearch']);
 
 Route::post('/logPageView', [PageViewController::class, 'logPageView']);
 Route::get('/getStats', [SentimentController::class, 'getStats']);

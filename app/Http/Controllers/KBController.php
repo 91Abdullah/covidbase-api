@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\RNACollection;
 use App\Http\Resources\PDBCollection;
 use App\Http\Resources\SentimentCollection;
 use App\Http\Resources\SideEffectResource;
 use App\Models\DrugName;
 use App\Models\Gene;
+use App\Models\Lncrna;
 use App\Models\Pdb;
 use App\Models\Rna;
 use App\Models\Sentiment;
@@ -44,6 +46,13 @@ class KBController extends Controller
         })->toArray();
     }
 
+    public function getTopLncRNASearch(): array
+    {
+        return TopSearch::query()->selectRaw('COUNT(*) as counter, searchTerm')->where('searchType', 'lncRNA')->groupBy('searchTerm')->orderBy('counter', 'desc')->limit(5)->pluck('searchTerm')->map(function ($v) {
+            return ['name' => $v, 'link' => "/lncRNAs/$v"];
+        })->toArray();
+    }
+
     public function getTopPDBSearch(): array
     {
         return TopSearch::query()->selectRaw('COUNT(*) as counter, searchTerm')->where('searchType', 'pdb')->groupBy('searchTerm')->orderBy('counter', 'desc')->limit(5)->pluck('searchTerm')->map(function ($v) {
@@ -69,6 +78,13 @@ class KBController extends Controller
     {
         return TopSearch::query()->selectRaw('COUNT(*) as counter, searchTerm')->where('searchType', 'disease+miRNA')->groupBy('searchTerm')->orderBy('counter', 'desc')->limit(5)->pluck('searchTerm')->map(function ($v) {
             return ['name' => $v, 'link' => "/disease-miRNA/$v"];
+        })->toArray();
+    }
+
+    public function getTopDiseaseLncRNASearch(): array
+    {
+        return TopSearch::query()->selectRaw('COUNT(*) as counter, searchTerm')->where('searchType', 'disease+lncRNA')->groupBy('searchTerm')->orderBy('counter', 'desc')->limit(5)->pluck('searchTerm')->map(function ($v) {
+            return ['name' => $v, 'link' => "/disease-lncRNA/$v"];
         })->toArray();
     }
 
@@ -99,7 +115,24 @@ class KBController extends Controller
             $query = Rna::query()->where('disease', 'LIKE', "%$disease%")->where('RNA', 'LIKE', "%$miRNA%")->orderBy('disease')->get();
             $data = [
                 'data' => [
-                    'diseaseMiRNA' => $query
+                    'diseaseMiRNA' => RNACollection::collection($query)
+                ]
+            ];
+            return response()->json($data);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage());
+        }
+    }
+
+    public function getDiseaseLncRNASearch(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $this->logTopSearch('disease+lncRNA', $request->term);
+            [$disease, $miRNA] = explode('+', $request->term);
+            $query = Lncrna::query()->where('disease', 'LIKE', "%$disease%")->where('RNA', 'LIKE', "%$miRNA%")->orderBy('disease')->get();
+            $data = [
+                'data' => [
+                    'diseaseLncRNA' => RNACollection::collection($query)
                 ]
             ];
             return response()->json($data);
@@ -135,7 +168,7 @@ class KBController extends Controller
                 'data' => [
                     'drugDisease' => SentimentCollection::collection($query),
                     'genes' => Gene::query()->where('disease', 'LIKE', "%$disease%")->get(),
-                    'miRNAs' => Rna::query()->where('disease', 'LIKE', "%$disease%")->get(),
+                    'miRNAs' => RNACollection::collection(Rna::query()->where('disease', 'LIKE', "%$disease%")->get()),
                     'PDBs' => PDBCollection::collection(Pdb::query()->where('drug', 'LIKE', "%$drug%")->get()),
                     'sideEffects' => SideEffectResource::collection(SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$drug%")->get())
                 ]
@@ -187,7 +220,23 @@ class KBController extends Controller
             $query = Rna::query()->where('RNA', 'LIKE', "%$request->term%")->orderBy('RNA')->get();
             $data = [
                 'data' => [
-                    'diseases' => $query
+                    'diseases' => RNACollection::collection($query)
+                ]
+            ];
+            return response()->json($data);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage(), 500);
+        }
+    }
+
+    public function getLncRNASearch(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $this->logTopSearch('lncRNA', $request->term);
+            $query = Lncrna::query()->where('RNA', 'LIKE', "%$request->term%")->orderBy('RNA')->get();
+            $data = [
+                'data' => [
+                    'diseases' => RNACollection::collection($query)
                 ]
             ];
             return response()->json($data);
@@ -203,7 +252,7 @@ class KBController extends Controller
             $query = Gene::query()->where('gene', 'LIKE', "%$request->term%")->orderBy('gene')->get();
             $data = [
                 'data' => [
-                    'diseases' => $query
+                    'diseases' => RNACollection::collection($query)
                 ]
             ];
             return response()->json($data);
@@ -221,7 +270,8 @@ class KBController extends Controller
                 'data' => [
                     'drugs' => SentimentCollection::collection($query),
                     'genes' => Gene::query()->where('disease', 'LIKE', "%$request->term%")->get(),
-                    'miRNAs' => Rna::query()->where('disease', 'LIKE', "%$request->term%")->get()
+                    'miRNAs' => RNACollection::collection(Rna::query()->where('disease', 'LIKE', "%$request->term%")->get()),
+                    'lncRNAs' => RNACollection::collection(Lncrna::query()->where('disease', 'LIKE', "%$request->term%")->get())
                 ],
                 'stats' => [
                     0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],

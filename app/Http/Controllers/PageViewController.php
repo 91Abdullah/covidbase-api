@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gene;
+use App\Models\Lncrna;
 use App\Models\PageView;
 use App\Models\Pdb;
 use App\Models\Rna;
@@ -24,6 +25,9 @@ class PageViewController extends Controller
                 'miRNAs' => Rna::query()->distinct()->select(['RNA'])->where('RNA', 'LIKE', "%$term%")->pluck('RNA')->transform(function ($v) {
                     return trim($v);
                 }),
+                'lncRNAs' => Lncrna::query()->distinct()->select(['RNA'])->where('RNA', 'LIKE', "%$term%")->pluck('RNA')->transform(function ($v) {
+                    return trim($v);
+                }),
                 'PDBs' => Pdb::query()->distinct()->select(['pdb'])->where('pdb', 'LIKE', "%$term%")->pluck('pdb')->transform(function ($v) {
                     return trim($v);
                 }),
@@ -34,6 +38,11 @@ class PageViewController extends Controller
                     return "{$v->disease}+{$v->gene}";
                 }),
                 'Disease-miRNA' => Rna::query()->distinct()->where('disease', 'LIKE', "%$term")->orWhere('RNA', 'LIKE', "%$term%")->select(['disease', 'RNA'])->get()->map(function ($v) {
+                    $v->disease = trim($v->disease);
+                    $v->RNA = trim($v->RNA);
+                    return "{$v->disease}+{$v->RNA}";
+                }),
+                'Disease-lncRNA' => Lncrna::query()->distinct()->where('disease', 'LIKE', "%$term")->orWhere('RNA', 'LIKE', "%$term%")->select(['disease', 'RNA'])->get()->map(function ($v) {
                     $v->disease = trim($v->disease);
                     $v->RNA = trim($v->RNA);
                     return "{$v->disease}+{$v->RNA}";
@@ -62,11 +71,13 @@ class PageViewController extends Controller
                 'diseases' => Sentiment::query()->select(['disease'])->distinct()->count('disease'),
                 'genes' => Gene::query()->select('gene')->distinct()->count('gene'),
                 'miRNAs' => Rna::query()->select(['RNA'])->distinct()->count('RNA'),
+                'lncRNAs' => Lncrna::query()->select(['RNA'])->distinct()->count('RNA'),
                 'PDBs' => Pdb::query()->select(['pdb'])->distinct()->count('pdb'),
                 'drugDiseasePairs' => Sentiment::query()->select(['drug', 'disease'])->count(),
                 'drugPDBPairs' => Pdb::query()->select(['drug', 'pdb'])->count(),
                 'diseaseGenePairs' => Gene::query()->select(['disease', 'gene'])->count(),
                 'diseaseMiRNAPairs' => Rna::query()->select(['disease', 'RNA'])->count(),
+                'diseaseLncRNAPairs' => Lncrna::query()->select(['disease', 'RNA'])->count(),
             ];
             return response()->json($stats);
         } catch (\Exception $exception) {
@@ -144,6 +155,20 @@ class PageViewController extends Controller
         }
     }
 
+    public function getAllLncrnaNames(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $RNAs = Lncrna::query()->select('RNA')->distinct()->orderBy('RNA')->get()->map(function ($v) {
+                return trim($v->RNA);
+            })->groupBy(function ($v) {
+                return ucfirst($v[0]);
+            });
+            return response()->json($RNAs);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage(), 500);
+        }
+    }
+
     public function getAllDrugPDBPairs(): \Illuminate\Http\JsonResponse
     {
         try {
@@ -180,6 +205,22 @@ class PageViewController extends Controller
     {
         try {
             $pairs = Rna::query()->select(['disease', 'RNA'])->get()->map(function ($v) {
+                $v->disease = ucfirst(trim($v->disease));
+                $v->RNA = trim($v->RNA);
+                return "{$v->disease}+{$v->RNA}";
+            })->groupBy(function ($i) {
+                return $i[0];
+            });
+            return response()->json($pairs);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage(), 500);
+        }
+    }
+
+    public function getAllDiseaseLncRNAPairs(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $pairs = Lncrna::query()->select(['disease', 'RNA'])->get()->map(function ($v) {
                 $v->disease = ucfirst(trim($v->disease));
                 $v->RNA = trim($v->RNA);
                 return "{$v->disease}+{$v->RNA}";
