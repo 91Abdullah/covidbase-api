@@ -15,6 +15,7 @@ class SentimentCollection extends JsonResource
     public function toArray($request): array|\JsonSerializable|\Illuminate\Contracts\Support\Arrayable
     {
         return [
+            'id' => $this->id,
             'drug' => $this->drug,
             'disease' => $this->disease,
             'class' => $this->class,

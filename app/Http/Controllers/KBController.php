@@ -253,6 +253,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'diseases' => RNACollection::collection($query)
+                ],
+                'count' => [
+                    'diseases' => $query->unique('disease')->count()
                 ]
             ];
             return response()->json($data);
@@ -299,16 +302,23 @@ class KBController extends Controller
         try {
             $this->logTopSearch('drug', $request->term);
             $query = Sentiment::query()->where('drug','LIKE', "%$request->term%")->orderBy('confidence', 'desc')->get();
+            $sideEffectQuery = SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$request->term%")->get();
+            $pdbQuery = Pdb::query()->where('drug', 'LIKE', "%$request->term%")->get();
             $data = [
                 'data' => [
                     'diseases' => SentimentCollection::collection($query),
-                    'sideEffects' => SideEffectResource::collection(SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$request->term%")->get()),
-                    'PDBs' => PDBCollection::collection(Pdb::query()->where('drug', 'LIKE', "%$request->term%")->get()),
+                    'sideEffects' => SideEffectResource::collection($sideEffectQuery),
+                    'PDBs' => PDBCollection::collection($pdbQuery),
                 ],
                 'stats' => [
                     0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
                     1 => ['name' => 'Negative', 'count' => $query->where('class', 'Negative')->count()],
                     2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
+                ],
+                'count' => [
+                    'diseases' => $query->unique('disease')->count(),
+                    'sideEffects' => $sideEffectQuery->unique('sideEffect')->count(),
+                    'PDBs' => $pdbQuery->unique('pdb')->count()
                 ]
             ];
             return response()->json($data);
