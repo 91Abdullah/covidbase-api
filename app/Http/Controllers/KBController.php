@@ -266,17 +266,26 @@ class KBController extends Controller
         try {
             $this->logTopSearch('disease', $request->term);
             $query = Sentiment::query()->where('disease', 'LIKE', "%$request->term%")->orderBy('confidence', 'desc')->get();
+            $geneQuery = Gene::query()->where('disease', 'LIKE', "%$request->term%")->get();
+            $rnaQuery = Rna::query()->where('disease', 'LIKE', "%$request->term%")->get();
+            $lncRNAQuery = Lncrna::query()->where('disease', 'LIKE', "%$request->term%")->get();
             $data = [
                 'data' => [
                     'drugs' => SentimentCollection::collection($query),
-                    'genes' => Gene::query()->where('disease', 'LIKE', "%$request->term%")->get(),
-                    'miRNAs' => RNACollection::collection(Rna::query()->where('disease', 'LIKE', "%$request->term%")->get()),
-                    'lncRNAs' => RNACollection::collection(Lncrna::query()->where('disease', 'LIKE', "%$request->term%")->get())
+                    'genes' => $geneQuery,
+                    'miRNAs' => RNACollection::collection($rnaQuery),
+                    'lncRNAs' => RNACollection::collection($lncRNAQuery)
                 ],
                 'stats' => [
                     0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
                     1 => ['name' => 'Negative', 'count' => $query->where('class', 'Negative')->count()],
                     2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
+                ],
+                'count' => [
+                    'drugs' => $query->unique('drug')->count(),
+                    'genes' => $geneQuery->unique('gene')->count(),
+                    'miRNAs' => $rnaQuery->unique('RNA')->count(),
+                    'lncRNAs' => $lncRNAQuery->unique('RNA')->count(),
                 ]
             ];
             return response()->json($data);
