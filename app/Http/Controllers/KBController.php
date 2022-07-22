@@ -116,6 +116,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'diseaseMiRNA' => RNACollection::collection($query)
+                ],
+                'count' => [
+                    'diseaseMiRNA' => $query->unique(['disease', 'RNA'])->count()
                 ]
             ];
             return response()->json($data);
@@ -133,6 +136,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'diseaseLncRNA' => RNACollection::collection($query)
+                ],
+                'count' => [
+                    'diseaseLncRNA' => $query->unique(['disease', 'RNA'])->count()
                 ]
             ];
             return response()->json($data);
@@ -150,6 +156,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'diseaseGene' => $query
+                ],
+                'count' => [
+                    'diseaseGene' => $query->unique(['disease', 'gene'])->count()
                 ]
             ];
             return response()->json($data);
@@ -164,13 +173,24 @@ class KBController extends Controller
             $this->logTopSearch('drug+disease', $request->term);
             [$disease, $drug] = explode('+', $request->term);
             $query = Sentiment::query()->where('drug', 'LIKE', "%$drug%")->where('disease', 'LIKE', "%$disease%")->orderBy('confidence', 'desc')->get();
+            $geneQuery = Gene::query()->where('disease', 'LIKE', "%$disease%")->get();
+            $rnaQuery = Rna::query()->where('disease', 'LIKE', "%$disease%")->get();
+            $pdbQuery = Pdb::query()->where('drug', 'LIKE', "%$drug%")->get();
+            $sideEffectQuery = SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$drug%")->get();
             $data = [
                 'data' => [
                     'drugDisease' => SentimentCollection::collection($query),
-                    'genes' => Gene::query()->where('disease', 'LIKE', "%$disease%")->get(),
-                    'miRNAs' => RNACollection::collection(Rna::query()->where('disease', 'LIKE', "%$disease%")->get()),
-                    'PDBs' => PDBCollection::collection(Pdb::query()->where('drug', 'LIKE', "%$drug%")->get()),
-                    'sideEffects' => SideEffectResource::collection(SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$drug%")->get())
+                    'genes' => $geneQuery,
+                    'miRNAs' => RNACollection::collection($rnaQuery),
+                    'PDBs' => PDBCollection::collection($pdbQuery),
+                    'sideEffects' => SideEffectResource::collection($sideEffectQuery)
+                ],
+                'count' => [
+                    'drugDisease' => $query->unique(['drug', 'disease'])->count(),
+                    'genes' => $geneQuery->unique('gene')->count(),
+                    'miRNAs' => $rnaQuery->unique('RNA')->count(),
+                    'PDBs' => $pdbQuery->unique('pdb')->count(),
+                    'sideEffects' => $sideEffectQuery->unique('sideEffect')->count()
                 ]
             ];
             return response()->json($data);
@@ -185,10 +205,15 @@ class KBController extends Controller
             $this->logTopSearch('drug+pdb', $request->term);
             [$drug, $pdb] = explode('+', $request->term);
             $query = Pdb::query()->where('drug', 'LIKE', "%$drug%")->where('pdb', 'LIKE', "%$pdb%")->orderBy('drug')->get();
+            $sideEffectQuery = SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$drug%")->get();
             $data = [
                 'data' => [
                     'drugPDB' => PDBCollection::collection($query),
-                    'sideEffects' => SideEffectResource::collection(SideEffect::query()->whereRelation('drugName', 'drugName', 'LIKE', "%$drug%")->get())
+                    'sideEffects' => SideEffectResource::collection($sideEffectQuery)
+                ],
+                'count' => [
+                    'drugPDB' => $query->unique(['drug', 'pdb'])->count(),
+                    'sideEffects' => $sideEffectQuery->unique('sideEffect')->count()
                 ]
             ];
             return response()->json($data);
@@ -205,6 +230,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'drugs' => PDBCollection::collection($query)
+                ],
+                'count' => [
+                    'drugs' => $query->unique('drug')->count()
                 ]
             ];
             return response()->json($data);
@@ -221,6 +249,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'diseases' => RNACollection::collection($query)
+                ],
+                'count' => [
+                    'diseases' => $query->unique('disease')->count()
                 ]
             ];
             return response()->json($data);
@@ -237,6 +268,9 @@ class KBController extends Controller
             $data = [
                 'data' => [
                     'diseases' => RNACollection::collection($query)
+                ],
+                'count' => [
+                    'diseases' => $query->unique('disease')->count()
                 ]
             ];
             return response()->json($data);
