@@ -73,11 +73,11 @@ class PageViewController extends Controller
                 'miRNAs' => Rna::query()->select(['RNA'])->distinct()->count('RNA'),
                 'lncRNAs' => Lncrna::query()->select(['RNA'])->distinct()->count('RNA'),
                 'PDBs' => Pdb::query()->select(['pdb'])->distinct()->count('pdb'),
-                'drugDiseasePairs' => Sentiment::query()->select(['drug', 'disease'])->count(),
-                'drugPDBPairs' => Pdb::query()->select(['drug', 'pdb'])->count(),
-                'diseaseGenePairs' => Gene::query()->select(['disease', 'gene'])->count(),
-                'diseaseMiRNAPairs' => Rna::query()->select(['disease', 'RNA'])->count(),
-                'diseaseLncRNAPairs' => Lncrna::query()->select(['disease', 'RNA'])->count(),
+                'drugDiseasePairs' => Sentiment::query()->select(['drug', 'disease'])->distinct()->count(['drug', 'disease']),
+                'drugPDBPairs' => Pdb::query()->select(['drug', 'pdb'])->distinct()->count(['drug', 'pdb']),
+                'diseaseGenePairs' => Gene::query()->select(['disease', 'gene'])->distinct()->count(['disease', 'gene']),
+                'diseaseMiRNAPairs' => Rna::query()->select(['disease', 'RNA'])->distinct()->count(['disease', 'RNA']),
+                'diseaseLncRNAPairs' => Lncrna::query()->select(['disease', 'RNA'])->distinct()->count(['disease', 'RNA']),
             ];
             return response()->json($stats);
         } catch (\Exception $exception) {
