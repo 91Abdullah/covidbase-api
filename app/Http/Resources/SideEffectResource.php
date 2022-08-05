@@ -15,6 +15,7 @@ class SideEffectResource extends JsonResource
     public function toArray($request): array|\JsonSerializable|\Illuminate\Contracts\Support\Arrayable
     {
         return [
+            'id' => $this->id,
             'drugId' => $this->drugId,
             'drugName' => $this->drugName->drugName,
             'sideEffect' => $this->sideEffect

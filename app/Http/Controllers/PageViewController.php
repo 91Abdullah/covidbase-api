@@ -134,7 +134,7 @@ class PageViewController extends Controller
         try {
             $pdbs = Pdb::query()->select('pdb')->distinct()->orderBy('pdb')->get()->map(function ($v) {
                 return ucfirst(trim($v->pdb));
-            })->groupBy('pdb');
+            })->groupBy(function ($i) { return $i[0]; });
             return response()->json($pdbs);
         } catch (\Exception $exception) {
             return response()->json($exception->getMessage(), 500);

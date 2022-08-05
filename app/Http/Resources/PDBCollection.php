@@ -15,6 +15,7 @@ class PDBCollection extends JsonResource
     public function toArray($request)
     {
         return [
+            'id' => $this->id,
             'drug' => $this->drug,
             'pdb' => $this->pdb,
             'title' => $this->title,

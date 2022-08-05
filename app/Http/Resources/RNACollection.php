@@ -15,6 +15,7 @@ class RNACollection extends JsonResource
     public function toArray($request)
     {
         return [
+            'id' => $this->id,
             'RNA' => $this->RNA,
             'abstract' => $this->abstract,
             'association' => $this->association,
