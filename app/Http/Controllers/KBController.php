@@ -20,6 +20,13 @@ use Illuminate\Http\Request;
 
 class KBController extends Controller
 {
+    public function getTopAlternateMedicineSearch()
+    {
+        return TopSearch::query()->selectRaw('COUNT(*) as counter, searchTerm')->where('searchType', 'alternateMedicine')->groupBy('searchTerm')->orderBy('counter', 'desc')->limit(5)->pluck('searchTerm')->map(function ($v) {
+            return ['name' => $v, 'link' => "/alternateMedicine/$v"];
+        })->toArray();
+    }
+
     public function getTopDrugSearch(): array
     {
         return TopSearch::query()->selectRaw('COUNT(*) as counter, searchTerm')->where('searchType', 'drug')->groupBy('searchTerm')->orderBy('counter', 'desc')->limit(5)->pluck('searchTerm')->map(function ($v) {
