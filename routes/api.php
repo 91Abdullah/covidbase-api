@@ -36,6 +36,7 @@ Route::get('/alternateMedicine', [PageViewController::class, 'getAllAlternateMed
 Route::get('/getOptions', [PageViewController::class, 'getOptions']);
 
 Route::post('/drugSearch', [KBController::class, 'getDrugSearch']);
+Route::post('/alternateMedicineSearch', [KBController::class, 'getAlternateMedicineSearch']);
 Route::post('/diseaseSearch', [KBController::class, 'getDiseaseSearch']);
 Route::post('/geneSearch', [KBController::class, 'getGeneSearch']);
 Route::post('/miRNASearch', [KBController::class, 'getMiRNASearch']);

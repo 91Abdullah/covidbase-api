@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AlternateMedicineCollection;
 use App\Http\Resources\RNACollection;
 use App\Http\Resources\PDBCollection;
 use App\Http\Resources\SentimentCollection;
 use App\Http\Resources\SideEffectResource;
+use App\Models\AlternateMedicine;
 use App\Models\DrugName;
 use App\Models\Gene;
 use App\Models\Lncrna;
@@ -323,6 +325,32 @@ class KBController extends Controller
                     'genes' => $geneQuery->unique('gene')->count(),
                     'miRNAs' => $rnaQuery->unique('RNA')->count(),
                     'lncRNAs' => $lncRNAQuery->unique('RNA')->count(),
+                ]
+            ];
+            return response()->json($data);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage(), 500);
+        }
+    }
+
+    public function getAlternateMedicineSearch(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $this->logTopSearch('alternateMedicine', $request->term);
+            $query = AlternateMedicine::query()->where('drug','LIKE', "%$request->term%")->orderBy('confidence', 'desc')->get();
+            $pdbQuery = Pdb::query()->where('drug', 'LIKE', "%$request->term%")->get();
+            $data = [
+                'data' => [
+                    'diseases' => AlternateMedicineCollection::collection($query),
+                    'PDBs' => PDBCollection::collection($pdbQuery),
+                ],
+                'stats' => [
+                    0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
+                    1 => ['name' => 'Negative', 'count' => $query->where('class', 'Negative')->count()],
+                ],
+                'count' => [
+                    'diseases' => $query->unique('disease')->count(),
+                    'PDBs' => $pdbQuery->unique('pdb')->count()
                 ]
             ];
             return response()->json($data);
