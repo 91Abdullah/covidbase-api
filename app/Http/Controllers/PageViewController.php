@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AlternateMedicine;
 use App\Models\Gene;
 use App\Models\Lncrna;
 use App\Models\PageView;
@@ -68,6 +69,7 @@ class PageViewController extends Controller
             $stats = [
                 'visits' => PageView::query()->select(['userId'])->distinct()->count('userId'),
                 'drugs' => Sentiment::query()->select(['drug'])->distinct()->count('drug'),
+                'alternateMedicine' => AlternateMedicine::query()->select(['drug'])->distinct()->count('drug'),
                 'diseases' => Sentiment::query()->select(['disease'])->distinct()->count('disease'),
                 'genes' => Gene::query()->select('gene')->distinct()->count('gene'),
                 'miRNAs' => Rna::query()->select(['RNA'])->distinct()->count('RNA'),
@@ -80,6 +82,16 @@ class PageViewController extends Controller
                 'diseaseLncRNAPairs' => Lncrna::query()->select(['disease', 'RNA'])->distinct()->count(['disease', 'RNA']),
             ];
             return response()->json($stats);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage(), 500);
+        }
+    }
+
+    public function getAllAlternateMedicines(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $am = AlternateMedicine::query()->select('drug')->distinct()->orderBy('drug')->get()->map(function ($v) { return $v->drug; })->groupBy(function ($i) { return $i[0]; });
+            return response()->json($am->toArray());
         } catch (\Exception $exception) {
             return response()->json($exception->getMessage(), 500);
         }

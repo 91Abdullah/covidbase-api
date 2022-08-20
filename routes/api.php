@@ -29,6 +29,7 @@ Route::get('/genes', [PageViewController::class, 'getAllGeneNames']);
 Route::get('/pdbs', [PageViewController::class, 'getAllPDBNames']);
 Route::get('/miRNAs', [PageViewController::class, 'getAllMirnaNames']);
 Route::get('/lncRNAs', [PageViewController::class, 'getAllLncrnaNames']);
+Route::get('/alternateMedicine', [PageViewController::class, 'getAllAlternateMedicines']);
 
 // Get options
 
