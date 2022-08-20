@@ -21,6 +21,7 @@ class PageViewController extends Controller
             $results = match ($type) {
                 default => null,
                 'Drugs' => Sentiment::query()->distinct()->select(['drug'])->where('drug', 'LIKE', "%$term%")->pluck('drug'),
+                'AlternateMedicine' => AlternateMedicine::query()->distinct()->select(['drug'])->where('drug', 'LIKE', "%$term%")->pluck('drug'),
                 'Diseases' => Sentiment::query()->distinct()->select(['disease'])->where('disease', 'LIKE', "%$term%")->pluck('disease'),
                 'Genes' => Gene::query()->distinct()->select(['gene'])->where('gene', 'LIKE', "%$term%")->pluck('gene'),
                 'miRNAs' => Rna::query()->distinct()->select(['RNA'])->where('RNA', 'LIKE', "%$term%")->pluck('RNA')->transform(function ($v) {
