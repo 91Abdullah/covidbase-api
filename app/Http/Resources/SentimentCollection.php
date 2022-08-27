@@ -19,7 +19,7 @@ class SentimentCollection extends JsonResource
             'drug' => $this->drug,
             'disease' => $this->disease,
             'class' => $this->class,
-            'confidence' => $this->confidence,
+            'confidence' => $this->confidence * 100,
             'sentence' => $this->sentences,
             'diseaseOntology' => $this->diseaseOntology
         ];
