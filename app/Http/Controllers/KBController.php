@@ -325,7 +325,7 @@ class KBController extends Controller
                 'stats' => [
                     0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
                     1 => ['name' => 'Negative', 'count' => $query->where('class', 'Negative')->count()],
-                    2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
+                    //2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
                 ],
                 'count' => [
                     'drugs' => $query->unique('drug')->count(),
@@ -382,7 +382,7 @@ class KBController extends Controller
                 'stats' => [
                     0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
                     1 => ['name' => 'Negative', 'count' => $query->where('class', 'Negative')->count()],
-                    2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
+                    //2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
                 ],
                 'count' => [
                     'diseases' => $query->unique('disease')->count(),

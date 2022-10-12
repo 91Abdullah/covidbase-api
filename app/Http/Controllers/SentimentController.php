@@ -73,10 +73,10 @@ class SentimentController extends Controller
                         ['name' => 'PDB', 'count' => $query2->unique('pdb')->count()],
                     ];
                     $stats = [
-                        0 => [
+                        /*0 => [
                             'name' => 'Neutral',
                             'count' => $query->where('class', 'Neutral')->count()
-                        ],
+                        ],*/
                         1 => [
                             'name' => 'Negative',
                             'count' => $query->where('class', 'Negative')->count(),
@@ -95,10 +95,10 @@ class SentimentController extends Controller
                         ['name' => 'Drug disease pair', 'count' => $query->count()],
                     ];
                     $stats = [
-                        0 => [
+                        /*0 => [
                             'name' => 'Neutral',
                             'count' => $query->where('class', 'Neutral')->count()
-                        ],
+                        ],*/
                         1 => [
                             'name' => 'Negative',
                             'count' => $query->where('class', 'Negative')->count(),
