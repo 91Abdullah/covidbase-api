@@ -315,12 +315,14 @@ class KBController extends Controller
             $geneQuery = Gene::query()->where('disease', 'LIKE', "%$request->term%")->get();
             $rnaQuery = Rna::query()->where('disease', 'LIKE', "%$request->term%")->get();
             $lncRNAQuery = Lncrna::query()->where('disease', 'LIKE', "%$request->term%")->get();
+            $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$request->term%")->get();
             $data = [
                 'data' => [
                     'drugs' => SentimentCollection::collection($query),
                     'genes' => $geneQuery,
                     'miRNAs' => RNACollection::collection($rnaQuery),
-                    'lncRNAs' => RNACollection::collection($lncRNAQuery)
+                    'lncRNAs' => RNACollection::collection($lncRNAQuery),
+                    'alternateMedicines' => AlternateMedicineCollection::collection($am)
                 ],
                 'stats' => [
                     0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
@@ -332,6 +334,7 @@ class KBController extends Controller
                     'genes' => $geneQuery->unique('gene')->count(),
                     'miRNAs' => $rnaQuery->unique('RNA')->count(),
                     'lncRNAs' => $lncRNAQuery->unique('RNA')->count(),
+                    'alternateMedicines' => $am->unique('drug')->count(),
                 ]
             ];
             return response()->json($data);
