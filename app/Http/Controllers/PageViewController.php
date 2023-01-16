@@ -10,6 +10,8 @@ use App\Models\Pdb;
 use App\Models\Rna;
 use App\Models\Sentiment;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
 class PageViewController extends Controller
 {
@@ -101,20 +103,33 @@ class PageViewController extends Controller
     public function getAllDrugNames(): \Illuminate\Http\JsonResponse
     {
         try {
-            $drugs = Sentiment::query()->select('drug')->distinct()->orderBy('drug')->get()->map(function ($v) { return $v->drug; })->groupBy(function($i) { return $i[0]; });
+            $drugs = Sentiment::query()->select('drug')->distinct()->orderBy('drug')->get()->map(function ($v) { return $v->drug; })->groupBy(function($i) { return ucfirst($i[0]); });
             return response()->json($drugs->toArray());
         } catch (\Exception $exception) {
             return response()->json($exception->getMessage(), 500);
         }
     }
 
-    public function getAllDrugDiseasePairs(): \Illuminate\Http\JsonResponse
+    private function paginator(Request $request, array $array, int $per_page, int $current_page = 1): LengthAwarePaginator
+    {
+        $total = count($array);
+        $starting_point = ($current_page * $per_page) - $per_page;
+        $array = array_slice($array, $starting_point, $per_page, true);
+        return new LengthAwarePaginator($array, $total, $per_page, $current_page, [
+            'path' => $request->url(),
+            'query' => $request->query()
+        ]);
+    }
+
+    public function getAllDrugDiseasePairs(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            $pairs = Sentiment::query()->select(['drug', 'disease'])->orderBy('disease')->get()->map(function ($v) {
-                return "{$v->disease}+{$v->drug}";
-            })->groupBy(function ($i) {
-                return $i[0];
+            $pairs = Cache::rememberForever('disease-drug', function () {
+                return Sentiment::query()->select(['drug', 'disease'])->orderBy('disease')->get()->map(function ($v) {
+                    return "{$v->disease}+{$v->drug}";
+                })->groupBy(function ($i) {
+                    return ucfirst($i[0]);
+                });
             });
             return response()->json($pairs);
         } catch (\Exception $exception) {

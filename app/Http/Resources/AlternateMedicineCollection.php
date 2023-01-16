@@ -22,8 +22,8 @@ class AlternateMedicineCollection extends JsonResource
             'disease' => $this->disease,
             'class' => $this->label,
             'confidence' => $this->confidence * 100,
-            'sentence' => $this->sentence,
-            'diseaseOntology' => $this->diseaseOntology
+            //'sentence' => $this->sentence,
+            //'diseaseOntology' => $this->diseaseOntology
         ];
     }
 }
