@@ -48,6 +48,7 @@ Route::post('/diseaseGeneSearch', [KBController::class, 'getDiseaseGeneSearch'])
 Route::post('/diseaseMiRNASearch', [KBController::class, 'getDiseaseMiRNASearch']);
 Route::post('/diseaseLncRNASearch', [KBController::class, 'getDiseaseLncRNASearch']);
 Route::post('/getSentence', [KBController::class, 'getSentence']);
+Route::post('/getDiseaseStats', [KBController::class, 'getDiseaseStats']);
 
 Route::get('/getTopDrugSearch', [KBController::class, 'getTopDrugSearch']);
 Route::get('/getTopAlternateMedicineSearch', [KBController::class, 'getTopAlternateMedicineSearch']);

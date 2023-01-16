@@ -17,6 +17,7 @@ use App\Models\Sentiment;
 use App\Models\SideEffect;
 use App\Models\TopSearch;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -325,40 +326,80 @@ class KBController extends Controller
     public function getDiseaseSearch(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            $this->logTopSearch('disease', $request->term);
-            $data = Cache::rememberForever("$request->term", function() use ($request) {
-                $query = Sentiment::query()->where('disease', 'LIKE', "%$request->term%")->orderBy('confidence', 'desc')->get();
-                $geneQuery = Gene::query()->where('disease', 'LIKE', "%$request->term%")->get();
-                $rnaQuery = Rna::query()->where('disease', 'LIKE', "%$request->term%")->get();
-                $lncRNAQuery = Lncrna::query()->where('disease', 'LIKE', "%$request->term%")->get();
-                $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$request->term%")->get();
-
-                return [
-                    'data' => [
-                        'drugs' => SentimentCollection::collection($query),
-                        'genes' => $geneQuery,
-                        'miRNAs' => RNACollection::collection($rnaQuery),
-                        'lncRNAs' => RNACollection::collection($lncRNAQuery),
-                        'alternateMedicines' => AlternateMedicineCollection::collection($am)
-                    ],
-                    'stats' => [
-                        0 => ['name' => 'Positive', 'count' => $query->where('class', 'Positive')->count()],
-                        1 => ['name' => 'Negative', 'count' => $query->where('class', 'Negative')->count()],
-                        //2 => ['name' => 'Neutral', 'count' => $query->where('class', 'Neutral')->count()]
-                    ],
-                    'count' => [
-                        'drugs' => $query->unique('drug')->count(),
-                        'genes' => $geneQuery->unique('gene')->count(),
-                        'miRNAs' => $rnaQuery->unique('RNA')->count(),
-                        'lncRNAs' => $lncRNAQuery->unique('RNA')->count(),
-                        'alternateMedicines' => $am->unique('drug')->count(),
-                    ]
-                ];
-            });
-            return response()->json($data);
+            $type = $request->type ?? 'drugs';
+            $this->logTopSearch($type, $request->term);
+            $response = match ($type) {
+                null => [],
+                'drugs' => $this->getDrugsData($request->term, $request->page ?? 1, $request->per_page ?? 10),
+                'lncRNAs' => $this->getRnaData($request->term, $request->page ?? 1, $request->per_page ?? 10),
+                'genes' => $this->getGeneData($request->term, $request->page ?? 1, $request->per_page ?? 10),
+                'miRNAs' => $this->getMiRNAsData($request->term, $request->page ?? 1, $request->per_page ?? 10),
+                'alternateMedicines' => $this->getAlternateMedicineData($request->term, $request->page ?? 1, $request->per_page ?? 10),
+            };
+            return response()->json($response);
         } catch (\Exception $exception) {
             return response()->json($exception->getMessage(), 500);
         }
+    }
+
+    private function getMiRNAsData(string $term, int $page = 1, int $per_page = 10)
+    {
+        $query = Rna::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        RNACollection::collection($query);
+        return $query;
+    }
+
+    private function getGeneData(string $term, int $page = 1, int $per_page = 10)
+    {
+        return Gene::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+    }
+
+    private function getAlternateMedicineData(string $term, int $page = 1, int $per_page = 10)
+    {
+        $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        AlternateMedicineCollection::collection($am);
+        return $am;
+    }
+
+    private function getRnaData(string $term, int $page = 1, int $per_page = 10)
+    {
+        $query = Lncrna::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        RNACollection::collection($query);
+        return $query;
+    }
+
+    private function getDrugsData(string $term, int $page = 1, int $per_page = 10)
+    {
+        $query = Sentiment::query()->where('disease', 'LIKE', "%$term%")->orderBy('confidence', 'desc')->paginate($per_page, ['*'], 'page', $page);
+        SentimentCollection::collection($query);
+        return $query;
+    }
+
+    public function getDiseaseStats(Request $request)
+    {
+        $term = $request->term;
+        $data = Cache::rememberForever("count-$term", function () use ($term) {
+            $query = Sentiment::query()->where('disease', 'LIKE', "%$term%");
+            $geneQuery = Gene::query()->where('disease', 'LIKE', "%$term%");
+            $rnaQuery = Rna::query()->where('disease', 'LIKE', "%$term%");
+            $lncRNAQuery = Lncrna::query()->where('disease', 'LIKE', "%$term%");
+            $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$term%");
+
+            return [
+                'count' => [
+                    'drugs' => $query->selectRaw('COUNT(DISTINCT drug) as count')->first()->count,
+                    'genes' => $geneQuery->selectRaw('COUNT(DISTINCT gene) as count')->first()->count,
+                    'miRNAs' => $rnaQuery->selectRaw('COUNT(DISTINCT RNA) as count')->first()->count,
+                    'lncRNAs' => $lncRNAQuery->selectRaw('COUNT(DISTINCT RNA) as count')->first()->count,
+                    'alternateMedicines' => $am->selectRaw('COUNT(DISTINCT drug) as count')->first()->count,
+                ],
+                'stats' => [
+                    0 => ['name' => 'Positive', 'count' => Sentiment::query()->where('disease', 'LIKE', "%$term%")->where('class', 'Positive')->count()],
+                    1 => ['name' => 'Negative', 'count' => Sentiment::query()->where('disease', 'LIKE', "%$term%")->where('class', 'Negative')->count()]
+                ]
+            ];
+        });
+        return response()->json($data);
     }
 
     public function getAlternateMedicineSearch(Request $request): \Illuminate\Http\JsonResponse

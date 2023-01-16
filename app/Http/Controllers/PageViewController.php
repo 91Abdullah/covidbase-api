@@ -110,17 +110,6 @@ class PageViewController extends Controller
         }
     }
 
-    private function paginator(Request $request, array $array, int $per_page, int $current_page = 1): LengthAwarePaginator
-    {
-        $total = count($array);
-        $starting_point = ($current_page * $per_page) - $per_page;
-        $array = array_slice($array, $starting_point, $per_page, true);
-        return new LengthAwarePaginator($array, $total, $per_page, $current_page, [
-            'path' => $request->url(),
-            'query' => $request->query()
-        ]);
-    }
-
     public function getAllDrugDiseasePairs(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
