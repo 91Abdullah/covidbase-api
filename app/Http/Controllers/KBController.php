@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CsvExport;
 use App\Http\Resources\AlternateMedicineCollection;
 use App\Http\Resources\RNACollection;
 use App\Http\Resources\PDBCollection;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class KBController extends Controller
 {
@@ -326,21 +328,12 @@ class KBController extends Controller
 
     public function getDiseaseSearch(Request $request): \Illuminate\Http\JsonResponse
     {
-        try {
-            $type = $request->type ?? 'drugs';
-            $this->logTopSearch($type, $request->term);
-            $response = match ($type) {
-                null => [],
-                'drugs' => $this->getDrugsData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
-                'lncRNAs' => $this->getRnaData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
-                'genes' => $this->getGeneData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
-                'miRNAs' => $this->getMiRNAsData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
-                'alternateMedicines' => $this->getAlternateMedicineData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
-            };
-            return response()->json($response);
-        } catch (\Exception $exception) {
-            return response()->json($exception->getMessage(), 500);
-        }
+        return $this->extracted($request);
+    }
+
+    public function export(Request $request)
+    {
+        return $this->extracted($request, true);
     }
 
     private function applyFilter(Builder $builder, array $filter = null, array $sorter = null)
@@ -357,47 +350,58 @@ class KBController extends Controller
         return $builder;
     }
 
-    private function getMiRNAsData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
+    private function getMiRNAsData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null, $export = false)
     {
         $query = Rna::query()->where('disease', 'LIKE', "%$term%");
         $query = $this->applyFilter($query, $filter, $sorter);
-        $query = $query->paginate($per_page, ['*'], 'page', $page);
-        RNACollection::collection($query);
+        if(!$export) {
+            $query = $query->paginate($per_page, ['*'], 'page', $page);
+            RNACollection::collection($query);
+        }
         return $query;
     }
 
-    private function getGeneData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
+    private function getGeneData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null, $export = false)
     {
         $query = Gene::query()->where('disease', 'LIKE', "%$term%");
         $query = $this->applyFilter($query, $filter, $sorter);
-        return $query->paginate($per_page, ['*'], 'page', $page);
-    }
-
-    private function getAlternateMedicineData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
-    {
-        $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$term%");
-        $am = $this->applyFilter($am, $filter, $sorter);
-        $am = $am->paginate($per_page, ['*'], 'page', $page);
-        AlternateMedicineCollection::collection($am);
-        return $am;
-    }
-
-    private function getRnaData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
-    {
-        $query = Lncrna::query()->where('disease', 'LIKE', "%$term%");
-        $query = $this->applyFilter($query, $filter, $sorter);
-        $query = $query->paginate($per_page, ['*'], 'page', $page);
-        RNACollection::collection($query);
+        if(!$export) {
+            $query = $query->paginate($per_page, ['*'], 'page', $page);
+        }
         return $query;
     }
 
-    private function getDrugsData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
+    private function getAlternateMedicineData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null, $export = false)
+    {
+        $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$term%");
+        $am = $this->applyFilter($am, $filter, $sorter);
+        if(!$export) {
+            $am = $am->paginate($per_page, ['*'], 'page', $page);
+            AlternateMedicineCollection::collection($am);
+        }
+        return $am;
+    }
+
+    private function getRnaData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null, $export = false)
+    {
+        $query = Lncrna::query()->where('disease', 'LIKE', "%$term%");
+        $query = $this->applyFilter($query, $filter, $sorter);
+        if(!$export) {
+            $query = $query->paginate($per_page, ['*'], 'page', $page);
+            RNACollection::collection($query);
+        }
+        return $query;
+    }
+
+    private function getDrugsData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null, $export = false)
     {
         $query = Sentiment::query()->where('disease', 'LIKE', "%$term%");
         $query = $this->applyFilter($query, $filter, $sorter);
-        $query = $query
-            ->paginate($per_page, ['*'], 'page', $page);
-        SentimentCollection::collection($query);
+        if(!$export) {
+            $query = $query
+                ->paginate($per_page, ['*'], 'page', $page);
+            SentimentCollection::collection($query);
+        }
         return $query;
     }
 
@@ -479,6 +483,33 @@ class KBController extends Controller
                 ]
             ];
             return response()->json($data);
+        } catch (\Exception $exception) {
+            return response()->json($exception->getMessage(), 500);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function extracted(Request $request, $export = false): \Illuminate\Http\JsonResponse|BinaryFileResponse
+    {
+        try {
+            $type = $request->type ?? 'drugs';
+            $this->logTopSearch($type, $request->term);
+            $response = match ($type) {
+                null => [],
+                'drugs' => $this->getDrugsData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter, $export),
+                'lncRNAs' => $this->getRnaData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter, $export),
+                'genes' => $this->getGeneData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter, $export),
+                'miRNAs' => $this->getMiRNAsData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter, $export),
+                'alternateMedicines' => $this->getAlternateMedicineData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter, $export),
+            };
+            if(!$export) {
+                return response()->json($response);
+            } else {
+                return (new CsvExport($response))->download("{$request->term}_{$type}.csv");
+            }
         } catch (\Exception $exception) {
             return response()->json($exception->getMessage(), 500);
         }

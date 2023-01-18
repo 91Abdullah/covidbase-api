@@ -50,6 +50,9 @@ Route::post('/diseaseLncRNASearch', [KBController::class, 'getDiseaseLncRNASearc
 Route::post('/getSentence', [KBController::class, 'getSentence']);
 Route::post('/getDiseaseStats', [KBController::class, 'getDiseaseStats']);
 
+// Export Route
+Route::get('/export', [KBController::class, 'export']);
+
 Route::get('/getTopDrugSearch', [KBController::class, 'getTopDrugSearch']);
 Route::get('/getTopAlternateMedicineSearch', [KBController::class, 'getTopAlternateMedicineSearch']);
 Route::get('/getTopDiseaseSearch', [KBController::class, 'getTopDiseaseSearch']);
