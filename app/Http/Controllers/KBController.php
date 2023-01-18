@@ -16,6 +16,7 @@ use App\Models\Rna;
 use App\Models\Sentiment;
 use App\Models\SideEffect;
 use App\Models\TopSearch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\Cache;
@@ -330,11 +331,11 @@ class KBController extends Controller
             $this->logTopSearch($type, $request->term);
             $response = match ($type) {
                 null => [],
-                'drugs' => $this->getDrugsData($request->term, $request->page ?? 1, $request->per_page ?? 10),
-                'lncRNAs' => $this->getRnaData($request->term, $request->page ?? 1, $request->per_page ?? 10),
-                'genes' => $this->getGeneData($request->term, $request->page ?? 1, $request->per_page ?? 10),
-                'miRNAs' => $this->getMiRNAsData($request->term, $request->page ?? 1, $request->per_page ?? 10),
-                'alternateMedicines' => $this->getAlternateMedicineData($request->term, $request->page ?? 1, $request->per_page ?? 10),
+                'drugs' => $this->getDrugsData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
+                'lncRNAs' => $this->getRnaData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
+                'genes' => $this->getGeneData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
+                'miRNAs' => $this->getMiRNAsData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
+                'alternateMedicines' => $this->getAlternateMedicineData($request->term, $request->page ?? 1, $request->per_page ?? 10, $request->filter, $request->sorter),
             };
             return response()->json($response);
         } catch (\Exception $exception) {
@@ -342,35 +343,60 @@ class KBController extends Controller
         }
     }
 
-    private function getMiRNAsData(string $term, int $page = 1, int $per_page = 10)
+    private function applyFilter(Builder $builder, array $filter = null, array $sorter = null)
     {
-        $query = Rna::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        if(isset($filter['class'])) {
+            $builder = $builder->whereIn('class', $filter['class']);
+        }
+        if(isset($filter['association'])) {
+            $builder = $builder->whereIn('association', $filter['association']);
+        }
+        if($sorter) {
+            $builder = $builder->orderBy($sorter['column']['dataIndex'], $sorter['order'] == 'ascend' ? 'asc': 'desc');
+        }
+        return $builder;
+    }
+
+    private function getMiRNAsData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
+    {
+        $query = Rna::query()->where('disease', 'LIKE', "%$term%");
+        $query = $this->applyFilter($query, $filter, $sorter);
+        $query = $query->paginate($per_page, ['*'], 'page', $page);
         RNACollection::collection($query);
         return $query;
     }
 
-    private function getGeneData(string $term, int $page = 1, int $per_page = 10)
+    private function getGeneData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
     {
-        return Gene::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        $query = Gene::query()->where('disease', 'LIKE', "%$term%");
+        $query = $this->applyFilter($query, $filter, $sorter);
+        return $query->paginate($per_page, ['*'], 'page', $page);
     }
 
-    private function getAlternateMedicineData(string $term, int $page = 1, int $per_page = 10)
+    private function getAlternateMedicineData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
     {
-        $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        $am = AlternateMedicine::query()->where('disease', 'LIKE', "%$term%");
+        $am = $this->applyFilter($am, $filter, $sorter);
+        $am = $am->paginate($per_page, ['*'], 'page', $page);
         AlternateMedicineCollection::collection($am);
         return $am;
     }
 
-    private function getRnaData(string $term, int $page = 1, int $per_page = 10)
+    private function getRnaData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
     {
-        $query = Lncrna::query()->where('disease', 'LIKE', "%$term%")->paginate($per_page, ['*'], 'page', $page);
+        $query = Lncrna::query()->where('disease', 'LIKE', "%$term%");
+        $query = $this->applyFilter($query, $filter, $sorter);
+        $query = $query->paginate($per_page, ['*'], 'page', $page);
         RNACollection::collection($query);
         return $query;
     }
 
-    private function getDrugsData(string $term, int $page = 1, int $per_page = 10)
+    private function getDrugsData(string $term, int $page = 1, int $per_page = 10, array $filter = null, array $sorter = null)
     {
-        $query = Sentiment::query()->where('disease', 'LIKE', "%$term%")->orderBy('confidence', 'desc')->paginate($per_page, ['*'], 'page', $page);
+        $query = Sentiment::query()->where('disease', 'LIKE', "%$term%");
+        $query = $this->applyFilter($query, $filter, $sorter);
+        $query = $query
+            ->paginate($per_page, ['*'], 'page', $page);
         SentimentCollection::collection($query);
         return $query;
     }
