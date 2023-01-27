@@ -199,7 +199,7 @@ class KBController extends Controller
     {
         try {
             $this->logTopSearch('drug+disease', $request->term);
-            [$disease, $drug] = explode('+', $request->term);
+            [$drug, $disease] = explode('+', $request->term);
             $query = Sentiment::query()->where('drug', 'LIKE', "%$drug%")->where('disease', 'LIKE', "%$disease%")->orderBy('confidence', 'desc')->get();
             $geneQuery = Gene::query()->where('disease', 'LIKE', "%$disease%")->get();
             $rnaQuery = Rna::query()->where('disease', 'LIKE', "%$disease%")->get();
